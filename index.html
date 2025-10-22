@@ -4,11 +4,155 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Star Wars API Project</title>
-    <link rel="stylesheet" href="index.css">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better readability and background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0d0d; /* Dark background */
+        }
+        .container {
+            min-height: 100vh;
+        }
+        .star-wars-yellow {
+            color: #ffe81f;
+        }
+    </style>
 </head>
 <body>
-    <h1>Star Wars Project - Fetch Test</h1>
-    <p>Check the console for the data!</p>
-    <script src="index.js"></script>
+
+    <div id="app" class="container p-4 md:p-8 flex flex-col items-center">
+
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold star-wars-yellow">SWAPI Data Explorer</h1>
+            <p class="text-gray-400 mt-2">Explore films and characters from the Star Wars universe.</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="w-full max-w-4xl space-y-8">
+
+            <!-- Data Point 1: Film Data (A New Hope) -->
+            <section id="film-data-card" class="bg-gray-800 p-6 rounded-lg shadow-2xl border border-yellow-500/30">
+                <h2 class="text-2xl font-semibold star-wars-yellow mb-4" id="film-title">Loading Film Data...</h2>
+                <p class="text-gray-300 text-sm mb-3" id="release-date">
+                    Loading release date...
+                </p>
+
+                <!-- Deeper Content Display -->
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <h3 class="text-xl font-medium text-yellow-400 mb-2">Opening Crawl</h3>
+                    <p class="text-gray-300 italic whitespace-pre-line" id="opening-crawl">Loading...</p>
+                </div>
+                <p class="text-gray-500 text-xs mt-4" id="director-producer">Loading director and producer...</p>
+            </section>
+
+            <!-- Navigation/Second Data Point Trigger -->
+            <div class="text-center">
+                <button id="fetch-character-btn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full transition duration-300 shadow-lg disabled:opacity-50"
+                >
+                    Fetch Luke Skywalker Details
+                </button>
+            </div>
+
+            <!-- Data Point 2: Character Data (Luke Skywalker) -->
+            <section id="additional-data-card" class="bg-gray-800 p-6 rounded-lg shadow-2xl border border-green-500/30 hidden">
+                <h2 class="text-2xl font-semibold text-green-400 mb-4">Character Details:</h2>
+                <div id="character-data" class="text-gray-300 space-y-1">
+                    <!-- Character data will be inserted here -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        const FILM_URL = 'https://swapi.dev/api/films/1/';
+        const CHARACTER_URL = 'https://swapi.dev/api/people/1/';
+        const fetchButton = document.getElementById('fetch-character-btn');
+
+        // --- Utility Function to Handle API Calls with Error Handling ---
+        async function fetchData(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                // Return an error object that can be checked by the caller
+                return { error: 'Failed to load data.' };
+            }
+        }
+
+        // --- Data Point 1: Film Data (A New Hope) ---
+        async function fetchFilmData() {
+            const filmData = await fetchData(FILM_URL);
+
+            const titleEl = document.getElementById('film-title');
+            const releaseEl = document.getElementById('release-date');
+            const crawlEl = document.getElementById('opening-crawl');
+            const directorProducerEl = document.getElementById('director-producer');
+
+            if (filmData.error) {
+                titleEl.textContent = 'Error loading film data.';
+                releaseEl.textContent = '';
+                crawlEl.textContent = filmData.error;
+                directorProducerEl.textContent = '';
+                return;
+            }
+
+            // REQUIRED STEP 1 & 2: Display Title and Release Date
+            titleEl.textContent = filmData.title;
+            releaseEl.textContent = `Release Date: ${filmData.release_date}`;
+
+            // ACCOMPLISHING INSTRUCTION 1: DIGGING DEEPER (Opening Crawl, Director/Producer)
+            crawlEl.textContent = filmData.opening_crawl;
+            directorProducerEl.textContent = `Director: ${filmData.director} | Producer: ${filmData.producer}`;
+        }
+
+        // --- Data Point 2: Character Data (Luke Skywalker) ---
+        // ACCOMPLISHING INSTRUCTION 3: BUILDING SECOND FETCH/FUNCTIONALITY
+        async function fetchCharacterData() {
+            // Disable button while loading
+            fetchButton.disabled = true;
+            fetchButton.textContent = 'Loading Character...';
+            document.getElementById('additional-data-card').classList.add('hidden');
+
+            const characterData = await fetchData(CHARACTER_URL);
+            const dataContainer = document.getElementById('character-data');
+            const card = document.getElementById('additional-data-card');
+
+            // Re-enable button
+            fetchButton.textContent = 'Fetch Luke Skywalker Details';
+            fetchButton.disabled = false;
+            card.classList.remove('hidden'); // Show the card
+
+            if (characterData.error) {
+                dataContainer.innerHTML = `<p class="text-red-400">${characterData.error}</p>`;
+                return;
+            }
+
+            // Displaying a few key details for the second data point
+            dataContainer.innerHTML = `
+                <p><strong class="text-green-300">Name:</strong> ${characterData.name}</p>
+                <p><strong class="text-green-300">Height:</strong> ${characterData.height} cm</p>
+                <p><strong class="text-green-300">Mass:</strong> ${characterData.mass} kg</p>
+                <p><strong class="text-green-300">Hair Color:</strong> ${characterData.hair_color}</p>
+                <p><strong class="text-green-300">Homeworld URL:</strong> <a href="${characterData.homeworld}" target="_blank" class="underline text-blue-400">${characterData.homeworld}</a></p>
+            `;
+
+            console.log('Second Data Point (Character Data) Received:', characterData);
+        }
+
+        // Event Listener to trigger the second fetch (Instruction #3)
+        fetchButton.addEventListener('click', fetchCharacterData);
+
+        // Initial fetch for the film data when the page loads
+        document.addEventListener('DOMContentLoaded', fetchFilmData);
+
+    </script>
 </body>
 </html>
