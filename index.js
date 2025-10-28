@@ -1,6 +1,10 @@
 const FILM_URL = 'https://swapi.dev/api/films/1/';
-const CHARACTER_URL = 'https://swapi.dev/api/people/1/';
-const fetchButton = document.getElementById('fetch-character-btn');
+// --- CHANGE 1: Use a base URL for characters ---
+const CHARACTER_BASE_URL = 'https://swapi.dev/api/people/';
+
+// --- CHANGE 2: Select both new buttons ---
+const lukeButton = document.getElementById('fetch-luke-btn');
+const vaderButton = document.getElementById('fetch-vader-btn');
 
 // --- Utility Function to Handle API Calls with Error Handling ---
 async function fetchData(url) {
@@ -12,15 +16,14 @@ async function fetchData(url) {
         return await response.json();
     } catch (error) {
         console.error("Fetch Error:", error);
-        // Return an error object that can be checked by the caller
         return { error: 'Failed to load data.' };
     }
 }
 
 // --- Data Point 1: Film Data (A New Hope) ---
 async function fetchFilmData() {
+    // This function doesn't need to change
     const filmData = await fetchData(FILM_URL);
-
     const titleEl = document.getElementById('film-title');
     const releaseEl = document.getElementById('release-date');
     const crawlEl = document.getElementById('opening-crawl');
@@ -34,30 +37,35 @@ async function fetchFilmData() {
         return;
     }
 
-    // REQUIRED STEP 1 & 2: Display Title and Release Date
     titleEl.textContent = filmData.title;
     releaseEl.textContent = `Release Date: ${filmData.release_date}`;
-
-    // ACCOMPLISHING INSTRUCTION 1: DIGGING DEEPER (Opening Crawl, Director/Producer)
     crawlEl.textContent = filmData.opening_crawl;
     directorProducerEl.textContent = `Director: ${filmData.director} | Producer: ${filmData.producer}`;
 }
 
-// --- Data Point 2: Character Data (Luke Skywalker) ---
-// ACCOMPLISHING INSTRUCTION 3: BUILDING SECOND FETCH/FUNCTIONALITY
-async function fetchCharacterData() {
-    // Disable button while loading
-    fetchButton.disabled = true;
-    fetchButton.textContent = 'Loading Character...';
+// --- Data Point 2: Character Data ---
+// --- CHANGE 3: Modify function to accept a character ID ---
+async function fetchCharacterData(characterId) {
+    // Disable both buttons while loading
+    lukeButton.disabled = true;
+    vaderButton.disabled = true;
+    lukeButton.textContent = 'Loading...';
+    vaderButton.textContent = 'Loading...';
+    
     document.getElementById('additional-data-card').classList.add('hidden');
 
-    const characterData = await fetchData(CHARACTER_URL);
+    // --- CHANGE 4: Build the URL using the base URL and the passed-in ID ---
+    const characterData = await fetchData(`${CHARACTER_BASE_URL}${characterId}/`);
+    
     const dataContainer = document.getElementById('character-data');
     const card = document.getElementById('additional-data-card');
 
-    // Re-enable button
-    fetchButton.textContent = 'Fetch Luke Skywalker Details';
-    fetchButton.disabled = false;
+    // Re-enable buttons and restore text
+    lukeButton.disabled = false;
+    vaderButton.disabled = false;
+    lukeButton.textContent = 'Fetch Luke Skywalker';
+    vaderButton.textContent = 'Fetch Darth Vader';
+    
     card.classList.remove('hidden'); // Show the card
 
     if (characterData.error) {
@@ -74,11 +82,15 @@ async function fetchCharacterData() {
         <p><strong class="text-green-300">Homeworld URL:</strong> <a href="${characterData.homeworld}" target="_blank" class="underline text-blue-400">${characterData.homeworld}</a></p>
     `;
 
-    console.log('Second Data Point (Character Data) Received:', characterData);
+    console.log('Character Data Received:', characterData);
 }
 
-// Event Listener to trigger the second fetch (Instruction #3)
-fetchButton.addEventListener('click', fetchCharacterData);
+// --- CHANGE 5: Add event listeners for BOTH buttons ---
+// (Luke is ID 1 in SWAPI)
+lukeButton.addEventListener('click', () => fetchCharacterData(1));
+// (Vader is ID 4 in SWAPI)
+vaderButton.addEventListener('click', () => fetchCharacterData(4));
+
 
 // Initial fetch for the film data when the page loads
 document.addEventListener('DOMContentLoaded', fetchFilmData);
